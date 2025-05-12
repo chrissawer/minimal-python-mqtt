@@ -22,12 +22,26 @@ MsgType = IntEnum('MsgType', [
     'DISCONNECT',
     ], start=0)
 
+class MqttMessageFactory:
+    def getMqttMessage(self, flagsByte, msgBody):
+        # Extract message type
+        msgFlags = flagsByte & 0xf
+        msgType = flagsByte >> 4
+
+        match msgType:
+            case MsgType.PUBLISH:
+                message = MqttPublish(msgFlags)
+                message.setBody(msgBody)
+                return message
+            case _:
+                raise Exception('Unhandled message type')
+
 class MqttMessage(ABC):
     protocol = 'MQTT'
     protocol_version = 4 # v3.1.1
 
     @abstractmethod
-    def __init__(self, msgType, msgFlags=0):
+    def __init__(self, msgType, msgFlags):
         self.msgType = msgType
         self.msgFlags = msgFlags
 
@@ -57,8 +71,8 @@ class MqttConnect(MqttMessage):
     connect_flags = 0x2 # Clean Session Flag
     client_id = ''
 
-    def __init__(self):
-        super().__init__(MsgType.CONNECT)
+    def __init__(self, msgFlags=0):
+        super().__init__(MsgType.CONNECT, msgFlags)
 
     def getBody(self):
         body = b''
@@ -78,8 +92,8 @@ class MqttConnAck(MqttMessage):
     Minimal implementation of connack
     Enough for a client to verify the server's connack
     '''
-    def __init__(self):
-        super().__init__(MsgType.CONNACK)
+    def __init__(self, msgFlags=0):
+        super().__init__(MsgType.CONNACK, msgFlags)
 
     def getBody(self):
         return b'\x00\x00'
@@ -92,8 +106,8 @@ class MqttSubscribe(MqttMessage):
     topic = '#'
     qos = 0
 
-    def __init__(self):
-        super().__init__(MsgType.SUBSCRIBE, msgFlags=0x2)
+    def __init__(self, msgFlags=2):
+        super().__init__(MsgType.SUBSCRIBE, msgFlags)
 
     def getBody(self):
         body = b''
@@ -110,8 +124,8 @@ class MqttSubAck(MqttMessage):
     message_identifier = 1
     qos = 0
 
-    def __init__(self):
-        super().__init__(MsgType.SUBACK)
+    def __init__(self, msgFlags=0):
+        super().__init__(MsgType.SUBACK, msgFlags)
 
     def getBody(self):
         body = b''
@@ -123,14 +137,22 @@ class MqttSubAck(MqttMessage):
         raise NotImplementedError()
 
 class MqttPublish(MqttMessage):
-    def __init__(self):
-        super().__init__(MsgType.PUBLISH)
+    def __init__(self, msgFlags=0):
+        super().__init__(MsgType.PUBLISH, msgFlags)
 
     def getBody(self):
         raise NotImplementedError()
 
+    def getTopic(self):
+        return self.topic
+
+    def getMessage(self):
+        return self.message
+
     def setBody(self, body):
-        raise NotImplementedError()
+        topicLen = int.from_bytes(body[:2],'big')
+        self.topic = body[2:topicLen+2].decode('ascii')
+        self.message = body[topicLen+2:].decode('ascii')
 
 class MqttMessageSize():
     '''
@@ -162,9 +184,9 @@ class MqttMessageSize():
         return size
 
 
-if __name__ == '__main__':
+def main(ipAddr, port):
     cs = socket.socket()
-    cs.connect(('192.168.8.108', 1883))
+    cs.connect((ipAddr, port))
 
     cs.send(MqttConnect().getBytes())
     expectedResponse = MqttConnAck().getBytes()
@@ -178,20 +200,21 @@ if __name__ == '__main__':
     if response != expectedResponse:
         raise Exception('Didn\'t receive expected SubAck')
 
+    msgFactory = MqttMessageFactory()
     while True:
         twoBytes = cs.recv(2)
 
-        ms = MqttMessageSize(twoBytes[1])
-        while ms.moreBytesNeeded():
+        msgSize = MqttMessageSize(twoBytes[1])
+        while msgSize.moreBytesNeeded():
             nextByte = cs.recv(1)[0]
-            ms.addByte(nextByte)
+            msgSize.addByte(nextByte)
 
-        message = cs.recv(ms.getMessageSize())
-        flags = twoBytes[0]
-        # TODO move to appropriate place
-        topicLen = int.from_bytes(message[:2],'big')
-        topic = message[2:topicLen+2]
-        restOfMessage = message[topicLen+2:]
-        print(f'Received {flags=} {topicLen=} {topic=} {restOfMessage=}')
+        msgBody = cs.recv(msgSize.getMessageSize())
+        flagsByte = twoBytes[0]
+        msg = msgFactory.getMqttMessage(flagsByte, msgBody)
+        print(f'Received msg {msg.getTopic()=} {msg.getMessage()=}')
 
     cs.close()
+
+if __name__ == '__main__':
+    main('192.168.8.108', 1883)

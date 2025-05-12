@@ -75,3 +75,11 @@ class TestMqttMessageSize(unittest.TestCase):
         ms.addByte(0x07)
         self.assertFalse(ms.moreBytesNeeded())
         self.assertEqual(0xe5482e, ms.getMessageSize())
+
+class TestMqttMessageFactory(unittest.TestCase):
+    def test_publish(self):
+        mf = MqttMessageFactory()
+        msg = mf.getMqttMessage(0x31, b'\x00\x01AB')
+        self.assertEqual(type(MqttPublish()), type(msg))
+        self.assertEqual('A', msg.topic)
+        self.assertEqual('B', msg.message)
