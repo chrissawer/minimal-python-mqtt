@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from enum import IntEnum
+import json
 import socket
 
 MsgType = IntEnum('MsgType', [
@@ -143,12 +144,6 @@ class MqttPublish(MqttMessage):
     def getBody(self):
         raise NotImplementedError()
 
-    def getTopic(self):
-        return self.topic
-
-    def getMessage(self):
-        return self.message
-
     def setBody(self, body):
         topicLen = int.from_bytes(body[:2],'big')
         self.topic = body[2:topicLen+2].decode('ascii')
@@ -212,7 +207,10 @@ def main(ipAddr, port):
         msgBody = cs.recv(msgSize.getMessageSize())
         flagsByte = twoBytes[0]
         msg = msgFactory.getMqttMessage(flagsByte, msgBody)
-        print(f'Received msg {msg.getTopic()=} {msg.getMessage()=}')
+        print(f'Received {msg.topic=} {msg.message=}')
+        if msg.topic.endswith('/sensors'):
+            sensorsMessage = json.loads(msg.message)
+            print(sensorsMessage['sn']['BME280'])
 
     cs.close()
 
