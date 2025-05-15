@@ -52,6 +52,22 @@ class TestMqttMessage(unittest.TestCase):
         self.assertEqual(b'\x00\x01', msgBytes[2:4]) # Message identifier
         self.assertEqual(b'\x00', msgBytes[4:5]) # QoS
 
+    def test_pingreq(self):
+        msg = MqttPingReq()
+        msgBytes = msg.getBytes()
+
+        self.assertEqual(2, len(msgBytes))
+        self.assertEqual(b'\xc0', msgBytes[0:1]) # Type
+        self.assertEqual(b'\x00', msgBytes[1:2]) # Length
+
+    def test_pingresp(self):
+        msg = MqttPingResp()
+        msgBytes = msg.getBytes()
+
+        self.assertEqual(2, len(msgBytes))
+        self.assertEqual(b'\xd0', msgBytes[0:1]) # Type
+        self.assertEqual(b'\x00', msgBytes[1:2]) # Length
+
 class TestMqttMessageSize(unittest.TestCase):
     def test_single_byte(self):
         ms = MqttMessageSize(120)

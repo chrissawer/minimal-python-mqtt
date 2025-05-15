@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from enum import IntEnum
 import json
+import select
 import socket
 
 MsgType = IntEnum('MsgType', [
@@ -137,6 +138,26 @@ class MqttSubAck(MqttMessage):
     def setBody(self, body):
         raise NotImplementedError()
 
+class MqttPingReq(MqttMessage):
+    def __init__(self, msgFlags=0):
+        super().__init__(MsgType.PINGREQ, msgFlags)
+
+    def getBody(self):
+        return b''
+
+    def setBody(self, body):
+        raise NotImplementedError()
+
+class MqttPingResp(MqttMessage):
+    def __init__(self, msgFlags=0):
+        super().__init__(MsgType.PINGRESP, msgFlags)
+
+    def getBody(self):
+        return b''
+
+    def setBody(self, body):
+        raise NotImplementedError()
+
 class MqttPublish(MqttMessage):
     def __init__(self, msgFlags=0):
         super().__init__(MsgType.PUBLISH, msgFlags)
@@ -195,22 +216,36 @@ def main(ipAddr, port):
     if response != expectedResponse:
         raise Exception('Didn\'t receive expected SubAck')
 
+    cs.setblocking(False)
     msgFactory = MqttMessageFactory()
     while True:
-        twoBytes = cs.recv(2)
+        ready = select.select([cs], [], [], 30)
+        if ready[0]:
+            twoBytes = cs.recv(2)
 
-        msgSize = MqttMessageSize(twoBytes[1])
-        while msgSize.moreBytesNeeded():
-            nextByte = cs.recv(1)[0]
-            msgSize.addByte(nextByte)
+            msgSize = MqttMessageSize(twoBytes[1])
+            while msgSize.moreBytesNeeded():
+                nextByte = cs.recv(1)[0]
+                msgSize.addByte(nextByte)
 
-        msgBody = cs.recv(msgSize.getMessageSize())
-        flagsByte = twoBytes[0]
-        msg = msgFactory.getMqttMessage(flagsByte, msgBody)
-        print(f'Received {msg.topic=} {msg.message=}')
-        if msg.topic.endswith('/sensors'):
-            sensorsMessage = json.loads(msg.message)
-            print(sensorsMessage['sn']['BME280'])
+            msgBody = cs.recv(msgSize.getMessageSize())
+            flagsByte = twoBytes[0]
+            msg = msgFactory.getMqttMessage(flagsByte, msgBody)
+            print(f'Received {msg.topic=} {msg.message=}')
+            if msg.topic.endswith('/sensors'):
+                sensorsMessage = json.loads(msg.message)
+                print(sensorsMessage['sn']['BME280'])
+        else:
+            print('Sending ping')
+            cs.send(MqttPingReq().getBytes())
+            expectedResponse = MqttPingResp().getBytes()
+            ready = select.select([cs], [], [], 5)
+            if ready[0]:
+                response = cs.recv(len(expectedResponse))
+                if response != expectedResponse:
+                    raise Exception('Didn\'t receive expected PingResp')
+            else:
+                print('Ping timeout')
 
     cs.close()
 
