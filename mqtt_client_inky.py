@@ -1,8 +1,12 @@
+import logging
+
 from font_fredoka_one import FredokaOne
 from inky import InkyPHAT
 from PIL import Image, ImageFont, ImageDraw
 
-from mqtt import *
+from mqtt import main
+
+logger = logging.getLogger(__name__)
 
 def cli_callback(sensorMessage):
     temp = sensorMessage['BME280']['Temperature']
@@ -21,7 +25,9 @@ def cli_callback(sensorMessage):
     inky_display.show()
 
 if __name__ == '__main__':
-    global inky_display
+    #logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.WARNING)
+
     inky_display = InkyPHAT('yellow')
     inky_display.set_border(inky_display.WHITE)
     main('192.168.8.108', 1883, '/SENSOR', cli_callback)

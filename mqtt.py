@@ -3,8 +3,11 @@
 from abc import ABC, abstractmethod
 from enum import IntEnum
 import json
+import logging
 import select
 import socket
+
+logger = logging.getLogger(__name__)
 
 MsgType = IntEnum('MsgType', [
     'RESERVED',
@@ -231,11 +234,11 @@ def main(ipAddr, port, topicFilter, messageCallback):
             msgBody = cs.recv(msgSize.getMessageSize())
             flagsByte = twoBytes[0]
             msg = msgFactory.getMqttMessage(flagsByte, msgBody)
-            print(f'Received {msg.topic=} {msg.message=}')
+            logger.info(f'Received {msg.topic=} {msg.message=}')
             if msg.topic.endswith(topicFilter):
                 messageCallback(json.loads(msg.message))
         else:
-            print('Sending ping')
+            logger.info('Sending ping')
             cs.send(MqttPingReq().getBytes())
             expectedResponse = MqttPingResp().getBytes()
             ready = select.select([cs], [], [], 5)
@@ -244,6 +247,6 @@ def main(ipAddr, port, topicFilter, messageCallback):
                 if response != expectedResponse:
                     raise Exception('Didn\'t receive expected PingResp')
             else:
-                print('Ping timeout')
+                logger.warning('Ping timeout')
 
     cs.close()
