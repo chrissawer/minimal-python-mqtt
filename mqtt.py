@@ -200,7 +200,7 @@ class MqttMessageSize():
         return size
 
 
-def main(ipAddr, port):
+def main(ipAddr, port, topicFilter, messageCallback):
     cs = socket.socket()
     cs.connect((ipAddr, port))
 
@@ -232,9 +232,8 @@ def main(ipAddr, port):
             flagsByte = twoBytes[0]
             msg = msgFactory.getMqttMessage(flagsByte, msgBody)
             print(f'Received {msg.topic=} {msg.message=}')
-            if msg.topic.endswith('/sensors'):
-                sensorsMessage = json.loads(msg.message)
-                print(sensorsMessage['sn']['BME280'])
+            if msg.topic.endswith(topicFilter):
+                messageCallback(json.loads(msg.message))
         else:
             print('Sending ping')
             cs.send(MqttPingReq().getBytes())
@@ -248,6 +247,3 @@ def main(ipAddr, port):
                 print('Ping timeout')
 
     cs.close()
-
-if __name__ == '__main__':
-    main('192.168.8.108', 1883)
