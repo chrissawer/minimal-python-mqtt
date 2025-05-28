@@ -57,14 +57,14 @@ class MqttMessage(ABC):
 
     def getTypeAndFlags(self):
         tf = (self.msgType << 4) | self.msgFlags
-        return tf.to_bytes()
+        return tf.to_bytes(1, 'big')
 
     def getBytes(self):
         body = self.getBody()
 
         msg = b''
         msg += self.getTypeAndFlags()
-        msg += len(body).to_bytes()
+        msg += len(body).to_bytes(1, 'big')
         msg += body
         return msg
 
@@ -80,8 +80,8 @@ class MqttConnect(MqttMessage):
         body = b''
         body += len(self.protocol).to_bytes(2,'big')
         body += self.protocol.encode('ascii')
-        body += self.protocol_version.to_bytes()
-        body += self.connect_flags.to_bytes()
+        body += self.protocol_version.to_bytes(1, 'big')
+        body += self.connect_flags.to_bytes(1, 'big')
         body += self.keepalive.to_bytes(2,'big')
         body += len(self.client_id).to_bytes(2,'big')
         return body
@@ -116,7 +116,7 @@ class MqttSubscribe(MqttMessage):
         body += self.message_identifier.to_bytes(2,'big')
         body += len(self.topic).to_bytes(2,'big')
         body += self.topic.encode('ascii')
-        body += self.qos.to_bytes()
+        body += self.qos.to_bytes(1, 'big')
         return body
 
     def setBody(self, body):
@@ -132,7 +132,7 @@ class MqttSubAck(MqttMessage):
     def getBody(self):
         body = b''
         body += self.message_identifier.to_bytes(2,'big')
-        body += self.qos.to_bytes()
+        body += self.qos.to_bytes(1, 'big')
         return body
 
     def setBody(self, body):
