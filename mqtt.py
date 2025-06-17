@@ -202,6 +202,20 @@ class MqttMessageSize():
 
         return size
 
+def recvAllBytes(cs, count):
+    firstRecv = cs.recv(count)
+    if len(firstRecv) == count:
+        # Most of the time you get all the bytes the first time
+        return firstRecv
+    else:
+        # Loop until we have what we need
+        allBytes = [firstRecv]
+        remainingBytes = count - len(firstRecv)
+        while remainingBytes > 0:
+            nextBytes = cs.recv(remainingBytes)
+            allBytes.append(nextBytes)
+            remainingBytes -= len(nextBytes)
+        return b''.join(allBytes)
 
 def main(ipAddr, port, topicFilter, messageCallback):
     cs = socket.socket()
@@ -209,13 +223,13 @@ def main(ipAddr, port, topicFilter, messageCallback):
 
     cs.send(MqttConnect().getBytes())
     expectedResponse = MqttConnAck().getBytes()
-    response = cs.recv(len(expectedResponse))
+    response = recvAllBytes(cs, len(expectedResponse))
     if response != expectedResponse:
         raise Exception('Didn\'t receive expected ConnAck')
 
     cs.send(MqttSubscribe().getBytes())
     expectedResponse = MqttSubAck().getBytes()
-    response = cs.recv(len(expectedResponse))
+    response = recvAllBytes(cs, len(expectedResponse))
     if response != expectedResponse:
         raise Exception('Didn\'t receive expected SubAck')
 
@@ -224,14 +238,14 @@ def main(ipAddr, port, topicFilter, messageCallback):
     while True:
         ready = select.select([cs], [], [], 30)
         if ready[0]:
-            twoBytes = cs.recv(2)
+            twoBytes = recvAllBytes(cs, 2)
 
             msgSize = MqttMessageSize(twoBytes[1])
             while msgSize.moreBytesNeeded():
-                nextByte = cs.recv(1)[0]
+                nextByte = recvAllBytes(cs, 1)[0]
                 msgSize.addByte(nextByte)
 
-            msgBody = cs.recv(msgSize.getMessageSize())
+            msgBody = recvAllBytes(cs, msgSize.getMessageSize())
             flagsByte = twoBytes[0]
             msg = msgFactory.getMqttMessage(flagsByte, msgBody)
             logger.info(f'Received {msg.topic=} {msg.message=}')
@@ -243,7 +257,7 @@ def main(ipAddr, port, topicFilter, messageCallback):
             expectedResponse = MqttPingResp().getBytes()
             ready = select.select([cs], [], [], 5)
             if ready[0]:
-                response = cs.recv(len(expectedResponse))
+                response = recvAllBytes(cs, len(expectedResponse))
                 if response != expectedResponse:
                     raise Exception('Didn\'t receive expected PingResp')
             else:
