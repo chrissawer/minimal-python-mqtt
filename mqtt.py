@@ -81,12 +81,12 @@ class MqttConnect(MqttMessage):
 
     def getBody(self):
         body = b''
-        body += len(self.protocol).to_bytes(2,'big')
+        body += len(self.protocol).to_bytes(2, 'big')
         body += self.protocol.encode('ascii')
         body += self.protocol_version.to_bytes(1, 'big')
         body += self.connect_flags.to_bytes(1, 'big')
-        body += self.keepalive.to_bytes(2,'big')
-        body += len(self.client_id).to_bytes(2,'big')
+        body += self.keepalive.to_bytes(2, 'big')
+        body += len(self.client_id).to_bytes(2, 'big')
         return body
 
     def setBody(self, body):
@@ -116,8 +116,8 @@ class MqttSubscribe(MqttMessage):
 
     def getBody(self):
         body = b''
-        body += self.message_identifier.to_bytes(2,'big')
-        body += len(self.topic).to_bytes(2,'big')
+        body += self.message_identifier.to_bytes(2, 'big')
+        body += len(self.topic).to_bytes(2, 'big')
         body += self.topic.encode('ascii')
         body += self.qos.to_bytes(1, 'big')
         return body
@@ -134,7 +134,7 @@ class MqttSubAck(MqttMessage):
 
     def getBody(self):
         body = b''
-        body += self.message_identifier.to_bytes(2,'big')
+        body += self.message_identifier.to_bytes(2, 'big')
         body += self.qos.to_bytes(1, 'big')
         return body
 
@@ -238,15 +238,14 @@ def main(ipAddr, port, topicFilter, messageCallback):
     while True:
         ready = select.select([cs], [], [], 30)
         if ready[0]:
-            twoBytes = recvAllBytes(cs, 2)
+            (flagsByte, startOfSize) = recvAllBytes(cs, 2)
 
-            msgSize = MqttMessageSize(twoBytes[1])
+            msgSize = MqttMessageSize(startOfSize)
             while msgSize.moreBytesNeeded():
                 nextByte = recvAllBytes(cs, 1)[0]
                 msgSize.addByte(nextByte)
 
             msgBody = recvAllBytes(cs, msgSize.getMessageSize())
-            flagsByte = twoBytes[0]
             msg = msgFactory.getMqttMessage(flagsByte, msgBody)
             logger.info(f'Received {msg.topic=} {msg.message=}')
             if msg.topic.endswith(topicFilter):
