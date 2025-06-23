@@ -69,28 +69,30 @@ class TestMqttMessage(unittest.TestCase):
         self.assertEqual(b'\x00', msgBytes[1:2]) # Length
 
 class TestMqttMessageSize(unittest.TestCase):
-    def test_single_byte(self):
-        ms = MqttMessageSize(120)
-        self.assertFalse(ms.moreBytesNeeded())
-        self.assertEqual(120, ms.getMessageSize())
+    messageSizeMap = {
+        0x78: b'\x78',
+        0x3a8: b'\xa8\x07',
+        0x123456: b'\xd6\xe8\x48',
+        0xe5482e: b'\xae\x90\x95\x07',
+    }
 
-    def test_two_bytes(self):
-        ms = MqttMessageSize(0xa8)
-        self.assertTrue(ms.moreBytesNeeded())
-        ms.addByte(0x07)
-        self.assertFalse(ms.moreBytesNeeded())
-        self.assertEqual(0x3a8, ms.getMessageSize())
+    def test_size_to_byte_string(self):
+        for size, byteString in self.messageSizeMap.items():
+            ms = MqttMessageSize()
+            ms.setMessageSize(size)
+            self.assertEqual(byteString, ms.byteString)
 
-    def test_four_bytes(self):
-        ms = MqttMessageSize(0xae)
-        self.assertTrue(ms.moreBytesNeeded())
-        ms.addByte(0x90)
-        self.assertTrue(ms.moreBytesNeeded())
-        ms.addByte(0x95)
-        self.assertTrue(ms.moreBytesNeeded())
-        ms.addByte(0x07)
-        self.assertFalse(ms.moreBytesNeeded())
-        self.assertEqual(0xe5482e, ms.getMessageSize())
+    def test_byte_string_to_size(self):
+        for size in self.messageSizeMap.keys():
+            firstByte = self.messageSizeMap[size][0]
+            otherBytes = self.messageSizeMap[size][1:]
+            ms = MqttMessageSize()
+            ms.addByte(firstByte)
+            for byte in otherBytes:
+                self.assertTrue(ms.moreBytesNeeded())
+                ms.addByte(byte)
+            self.assertFalse(ms.moreBytesNeeded())
+            self.assertEqual(size, ms.getMessageSize())
 
 class TestMqttMessageFactory(unittest.TestCase):
     def test_publish(self):
