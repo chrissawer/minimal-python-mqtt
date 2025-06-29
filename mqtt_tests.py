@@ -2,7 +2,7 @@
 
 import unittest
 
-from mqtt import *
+from mqtt_message import *
 
 # python3 -m unittest mqtt_tests
 # python3 -m unittest mqtt_tests.TestMqttMessage
