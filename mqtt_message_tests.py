@@ -4,8 +4,8 @@ import unittest
 
 from mqtt_message import *
 
-# python3 -m unittest mqtt_tests
-# python3 -m unittest mqtt_tests.TestMqttMessage
+# python3 -m unittest mqtt_message_tests
+# python3 -m unittest mqtt_message_tests.TestMqttMessage
 
 class TestMqttMessage(unittest.TestCase):
     def test_connect(self):
@@ -101,3 +101,6 @@ class TestMqttMessageFactory(unittest.TestCase):
         self.assertEqual(type(MqttPublish()), type(msg))
         self.assertEqual('A', msg.topic)
         self.assertEqual('B', msg.message)
+
+if __name__ == '__main__':
+    unittest.main()
