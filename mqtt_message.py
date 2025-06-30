@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from abc import ABC, abstractmethod
 from enum import IntEnum
 import logging
@@ -36,6 +34,7 @@ class MqttMessageFactory:
                 message.setBody(msgBody)
                 return message
             case _:
+                logger.warning(f'Unhandled message type {msgType}')
                 raise Exception('Unhandled message type')
 
 class MqttMessage(ABC):

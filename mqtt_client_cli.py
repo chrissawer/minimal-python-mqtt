@@ -1,5 +1,8 @@
+#!/usr/bin/env python3
+
 import datetime
 import logging
+import sys
 
 from mqtt import main
 
@@ -13,4 +16,8 @@ def cli_callback(sensorMessage):
 if __name__ == '__main__':
     #logging.basicConfig(level=logging.DEBUG)
     logging.basicConfig(level=logging.WARNING)
-    main('192.168.8.108', 1883, '/SENSOR', cli_callback)
+
+    if len(sys.argv) < 2:
+        logger.error('MQTT hostname not supplied')
+    else:
+        main(sys.argv[1], 1883, '/SENSOR', cli_callback)

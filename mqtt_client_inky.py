@@ -1,4 +1,7 @@
+#!/usr/bin/env python3
+
 import logging
+import sys
 
 from font_fredoka_one import FredokaOne
 from inky import InkyPHAT
@@ -28,6 +31,9 @@ if __name__ == '__main__':
     #logging.basicConfig(level=logging.DEBUG)
     logging.basicConfig(level=logging.WARNING)
 
-    inky_display = InkyPHAT('yellow')
-    inky_display.set_border(inky_display.WHITE)
-    main('192.168.8.108', 1883, '/SENSOR', cli_callback)
+    if len(sys.argv) < 2:
+        logger.error('MQTT hostname not supplied')
+    else:
+        inky_display = InkyPHAT('yellow')
+        inky_display.set_border(inky_display.WHITE)
+        main(sys.argv[1], 1883, '/SENSOR', cli_callback)
