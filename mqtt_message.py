@@ -1,26 +1,24 @@
-from abc import ABC, abstractmethod
-from enum import IntEnum
+from abc import abstractmethod
 import logging
 
 logger = logging.getLogger(__name__)
 
-MsgType = IntEnum('MsgType', [
-    'RESERVED',
-    'CONNECT',
-    'CONNACK',
-    'PUBLISH',
-    'PUBACK',
-    'PUBREC',
-    'PUBREL',
-    'PUBCOMP',
-    'SUBSCRIBE',
-    'SUBACK',
-    'UNSUBSCRIBE',
-    'UNSUBACK',
-    'PINGREQ',
-    'PINGRESP',
-    'DISCONNECT',
-    ], start=0)
+class MsgType:
+    RESERVED    =  0
+    CONNECT     =  1
+    CONNACK     =  2
+    PUBLISH     =  3
+    PUBACK      =  4
+    PUBREC      =  5
+    PUBREL      =  6
+    PUBCOMP     =  7
+    SUBSCRIBE   =  8
+    SUBACK      =  9
+    UNSUBSCRIBE = 10
+    UNSUBACK    = 11
+    PINGREQ     = 12
+    PINGRESP    = 13
+    DISCONNECT  = 14
 
 class MqttMessageFactory:
     def getMqttMessage(self, flagsByte, msgBody):
@@ -28,16 +26,15 @@ class MqttMessageFactory:
         msgFlags = flagsByte & 0xf
         msgType = flagsByte >> 4
 
-        match msgType:
-            case MsgType.PUBLISH:
-                message = MqttPublish(msgFlags)
-                message.setBody(msgBody)
-                return message
-            case _:
-                logger.warning(f'Unhandled message type {msgType}')
-                raise Exception('Unhandled message type')
+        if msgType == MsgType.PUBLISH:
+            message = MqttPublish(msgFlags)
+            message.setBody(msgBody)
+            return message
+        else:
+            logger.warning(f'Unhandled message type {msgType}')
+            raise Exception('Unhandled message type')
 
-class MqttMessage(ABC):
+class MqttMessage():
     protocol = 'MQTT'
     protocol_version = 4 # v3.1.1
 
