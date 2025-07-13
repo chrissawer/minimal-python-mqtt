@@ -68,6 +68,29 @@ class TestMqttMessage(unittest.TestCase):
         self.assertEqual(b'\xd0', msgBytes[0:1]) # Type
         self.assertEqual(b'\x00', msgBytes[1:2]) # Length
 
+    def test_publish_minimal(self):
+        msg = MqttPublish()
+        msgBytes = msg.getBytes()
+
+        self.assertEqual(5, len(msgBytes))
+        self.assertEqual(b'\x30', msgBytes[0:1]) # Type/flags
+        self.assertEqual(b'\x03', msgBytes[1:2]) # Length
+        self.assertEqual(b'\x00\x01', msgBytes[2:4]) # Topic length
+        self.assertEqual(b'#', msgBytes[4:5]) # Topic
+
+    def test_publish_populated(self):
+        msg = MqttPublish(msgFlags=0x1)
+        msg.topic = 'ABC'
+        msg.message = 'Hello'
+        msgBytes = msg.getBytes()
+
+        self.assertEqual(12, len(msgBytes))
+        self.assertEqual(b'\x31', msgBytes[0:1]) # Type/flags
+        self.assertEqual(b'\x0a', msgBytes[1:2]) # Length
+        self.assertEqual(b'\x00\x03', msgBytes[2:4]) # Topic length
+        self.assertEqual(b'ABC', msgBytes[4:7]) # Topic
+        self.assertEqual(b'Hello', msgBytes[7:12]) # Message
+
     def test_disconnect(self):
         msg = MqttDisconnect()
         msgBytes = msg.getBytes()

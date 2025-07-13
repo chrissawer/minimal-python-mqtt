@@ -157,16 +157,23 @@ class MqttPingResp(MqttMessage):
         raise NotImplementedError()
 
 class MqttPublish(MqttMessage):
+    topic = '#'
+    message = ''
+
     def __init__(self, msgFlags=0):
         super().__init__(MsgType.PUBLISH, msgFlags)
 
     def getBody(self):
-        raise NotImplementedError()
+        body = b''
+        body += len(self.topic).to_bytes(2, 'big')
+        body += self.topic.encode('ascii')
+        body += self.message.encode('utf-8')
+        return body
 
     def setBody(self, body):
         topicLen = int.from_bytes(body[:2],'big')
         self.topic = body[2:topicLen+2].decode('ascii')
-        self.message = body[topicLen+2:].decode('ascii')
+        self.message = body[topicLen+2:].decode('utf-8')
 
 class MqttDisconnect(MqttMessage):
     def __init__(self, msgFlags=0):
