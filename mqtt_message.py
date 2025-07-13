@@ -168,6 +168,16 @@ class MqttPublish(MqttMessage):
         self.topic = body[2:topicLen+2].decode('ascii')
         self.message = body[topicLen+2:].decode('ascii')
 
+class MqttDisconnect(MqttMessage):
+    def __init__(self, msgFlags=0):
+        super().__init__(MsgType.DISCONNECT, msgFlags)
+
+    def getBody(self):
+        return b''
+
+    def setBody(self, body):
+        raise NotImplementedError()
+
 class MqttMessageSize():
     '''
     MQTT has an unusual multi-byte way of storing message sizes

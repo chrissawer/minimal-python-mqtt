@@ -68,6 +68,14 @@ class TestMqttMessage(unittest.TestCase):
         self.assertEqual(b'\xd0', msgBytes[0:1]) # Type
         self.assertEqual(b'\x00', msgBytes[1:2]) # Length
 
+    def test_disconnect(self):
+        msg = MqttDisconnect()
+        msgBytes = msg.getBytes()
+
+        self.assertEqual(2, len(msgBytes))
+        self.assertEqual(b'\xe0', msgBytes[0:1]) # Type
+        self.assertEqual(b'\x00', msgBytes[1:2]) # Length
+
 class TestMqttMessageSize(unittest.TestCase):
     messageSizeMap = {
         0x78: b'\x78',
