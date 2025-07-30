@@ -39,6 +39,17 @@ def mqttSubscribe(cs):
     if response != expectedResponse:
         raise Exception('Didn\'t receive expected SubAck')
 
+def mqttPing(cs, selectProvider):
+    cs.send(MqttPingReq().getBytes())
+    expectedResponse = MqttPingResp().getBytes()
+    ready = selectProvider.select([cs], [], [], 5)
+    if ready[0]:
+        response = recvAllBytes(cs, len(expectedResponse))
+        if response != expectedResponse:
+            raise Exception('Didn\'t receive expected PingResp')
+    else:
+        logger.warning('Ping timeout')
+
 def main(ipAddr, port, topicFilter, messageCallback):
     cs = socket.socket()
     cs.connect((ipAddr, port))
@@ -66,14 +77,6 @@ def main(ipAddr, port, topicFilter, messageCallback):
                 messageCallback(json.loads(msg.message))
         else:
             logger.info('Sending ping')
-            cs.send(MqttPingReq().getBytes())
-            expectedResponse = MqttPingResp().getBytes()
-            ready = select.select([cs], [], [], 5)
-            if ready[0]:
-                response = recvAllBytes(cs, len(expectedResponse))
-                if response != expectedResponse:
-                    raise Exception('Didn\'t receive expected PingResp')
-            else:
-                logger.warning('Ping timeout')
+            mqttPing(cs, select)
 
     cs.close()
