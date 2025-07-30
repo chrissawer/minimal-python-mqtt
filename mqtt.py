@@ -14,12 +14,15 @@ def recvAllBytes(cs, count):
         return firstRecv
     else:
         # Loop until we have what we need
+        logger.info('Didn\'t get all bytes')
         allBytes = [firstRecv]
         remainingBytes = count - len(firstRecv)
         while remainingBytes > 0:
+            logger.info(f'Waiting for {remainingBytes} more bytes')
             nextBytes = cs.recv(remainingBytes)
             allBytes.append(nextBytes)
             remainingBytes -= len(nextBytes)
+        logger.info('Got all bytes')
         return b''.join(allBytes)
 
 def mqttConnect(cs):
