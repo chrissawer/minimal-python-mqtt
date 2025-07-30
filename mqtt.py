@@ -22,21 +22,26 @@ def recvAllBytes(cs, count):
             remainingBytes -= len(nextBytes)
         return b''.join(allBytes)
 
-def main(ipAddr, port, topicFilter, messageCallback):
-    cs = socket.socket()
-    cs.connect((ipAddr, port))
-
+def mqttConnect(cs):
     cs.send(MqttConnect().getBytes())
     expectedResponse = MqttConnAck().getBytes()
     response = recvAllBytes(cs, len(expectedResponse))
     if response != expectedResponse:
         raise Exception('Didn\'t receive expected ConnAck')
 
+def mqttSubscribe(cs):
     cs.send(MqttSubscribe().getBytes())
     expectedResponse = MqttSubAck().getBytes()
     response = recvAllBytes(cs, len(expectedResponse))
     if response != expectedResponse:
         raise Exception('Didn\'t receive expected SubAck')
+
+def main(ipAddr, port, topicFilter, messageCallback):
+    cs = socket.socket()
+    cs.connect((ipAddr, port))
+
+    mqttConnect(cs)
+    mqttSubscribe(cs)
 
     cs.setblocking(False)
     msgFactory = MqttMessageFactory()
