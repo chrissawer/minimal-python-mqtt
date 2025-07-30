@@ -19,8 +19,7 @@ class TestMqttConnect(unittest.TestCase):
         cs.recv.assert_called_once_with(len(correctResponse))
 
     def test_mqtt_connect_incorrect_response(self):
-        incorrectResponse = b'1234'
-        cs = Mock(**{'recv.return_value': incorrectResponse})
+        cs = Mock(**{'recv.return_value': b'XXXX'})
         with self.assertRaises(Exception):
             mqttConnect(cs)
 
@@ -35,8 +34,7 @@ class TestMqttSubscribe(unittest.TestCase):
         cs.recv.assert_called_once_with(len(correctResponse))
 
     def test_mqtt_subscribe_incorrect_response(self):
-        incorrectResponse = b'12345'
-        cs = Mock(**{'recv.return_value': incorrectResponse})
+        cs = Mock(**{'recv.return_value': b'XXXXX'})
         with self.assertRaises(Exception):
             mqttSubscribe(cs)
 
@@ -53,8 +51,7 @@ class TestMqttPing(unittest.TestCase):
         select.select.assert_called_once_with(ANY, ANY, ANY, 5)
 
     def test_mqtt_ping_incorrect_response(self):
-        incorrectResponse = b'12'
-        cs = Mock(**{'recv.return_value': incorrectResponse})
+        cs = Mock(**{'recv.return_value': b'XX'})
         select = Mock(**{'select.return_value': ([cs], [], [])})
         with self.assertRaises(Exception):
             mqttPing(cs)
