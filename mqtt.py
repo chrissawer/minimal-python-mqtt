@@ -58,7 +58,6 @@ def main(ipAddr, port, topicFilter, messageCallback):
     mqttSubscribe(cs)
 
     cs.setblocking(False)
-    msgFactory = MqttMessageFactory()
     while True:
         ready = select.select([cs], [], [], 30)
         if ready[0]:
@@ -71,7 +70,7 @@ def main(ipAddr, port, topicFilter, messageCallback):
                 msgSize.addByte(nextByte)
 
             msgBody = recvAllBytes(cs, msgSize.getMessageSize())
-            msg = msgFactory.getMqttMessage(flagsByte, msgBody)
+            msg = MsgType.getMqttMessage(flagsByte, msgBody)
             logger.info(f'Received {msg.topic=} {msg.message=}')
             if msg.topic.endswith(topicFilter):
                 messageCallback(json.loads(msg.message))

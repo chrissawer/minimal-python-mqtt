@@ -20,8 +20,7 @@ class MsgType:
     PINGRESP    = 13
     DISCONNECT  = 14
 
-class MqttMessageFactory:
-    def getMqttMessage(self, flagsByte, msgBody):
+    def getMqttMessage(flagsByte, msgBody):
         # Extract message type
         msgFlags = flagsByte & 0xf
         msgType = flagsByte >> 4
