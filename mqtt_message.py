@@ -112,7 +112,7 @@ class MqttSubscribe(MqttMessage):
         body = b''
         body += self.message_identifier.to_bytes(2, 'big')
         body += len(self.topic).to_bytes(2, 'big')
-        body += self.topic.encode('ascii')
+        body += self.topic.encode('utf-8')
         body += self.qos.to_bytes(1, 'big')
         return body
 
@@ -165,14 +165,18 @@ class MqttPublish(MqttMessage):
     def getBody(self):
         body = b''
         body += len(self.topic).to_bytes(2, 'big')
-        body += self.topic.encode('ascii')
+        body += self.topic.encode('utf-8')
         body += self.message.encode('utf-8')
         return body
 
     def setBody(self, body):
         topicLen = int.from_bytes(body[:2],'big')
-        self.topic = body[2:topicLen+2].decode('ascii')
+        self.topic = body[2:topicLen+2].decode('utf-8')
         self.message = body[topicLen+2:].decode('utf-8')
+
+    def setContent(self, topic, message):
+        self.topic = topic
+        self.message = message
 
 class MqttDisconnect(MqttMessage):
     def __init__(self, msgFlags=0):

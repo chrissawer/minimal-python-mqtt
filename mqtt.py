@@ -55,11 +55,19 @@ def mqttPing(cs, selectProvider):
     else:
         logger.warning('Ping timeout')
 
-def main(ipAddr, port, topicFilter, messageCallback):
+def mqttPublish(cs, topic, message):
+    mp = MqttPublish()
+    mp.setContent(topic, message)
+    cs.send(mp.getBytes())
+
+def socketConnect(ipAddr, port):
     cs = socket.socket()
     cs.connect((ipAddr, port))
-
     mqttConnect(cs)
+    return cs
+
+def main(ipAddr, port, topicFilter, messageCallback):
+    cs = socketConnect(ipAddr, port)
     mqttSubscribe(cs)
 
     cs.setblocking(False)
@@ -83,4 +91,11 @@ def main(ipAddr, port, topicFilter, messageCallback):
             logger.info('Sending ping')
             mqttPing(cs, select)
 
+    cs.close()
+
+def mainSendMessage(ipAddr, port, topic, message):
+    cs = socketConnect(ipAddr, port)
+    mqttPublish(cs, topic, message)
+
+    cs.send(MqttDisconnect().getBytes())
     cs.close()
