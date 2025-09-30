@@ -2,6 +2,7 @@ import json
 import logging
 import select
 import socket
+import time
 
 from mqtt_message import *
 
@@ -19,10 +20,14 @@ def recvAllBytes(cs, count):
         remainingBytes = count - len(firstRecv)
         while remainingBytes > 0:
             logger.info(f'Waiting for {remainingBytes} more bytes')
-            nextBytes = cs.recv(remainingBytes)
-            allBytes.append(nextBytes)
-            remainingBytes -= len(nextBytes)
-        logger.info('Got all bytes')
+            try:
+                nextBytes = cs.recv(remainingBytes)
+                allBytes.append(nextBytes)
+                remainingBytes -= len(nextBytes)
+            except OSError: #BlockingIOError:
+                logger.info('Sleeping while waiting for more bytes')
+                time.sleep(0.001)
+        logger.info(f'Got all {count} bytes')
         return b''.join(allBytes)
 
 def mqttConnect(cs):
