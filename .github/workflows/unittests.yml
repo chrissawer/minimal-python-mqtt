@@ -11,3 +11,11 @@ jobs:
           python-version: '3.14'
       - run: python3 mqtt_tests.py
       - run: python3 mqtt_message_tests.py
+  python-unit-tests-containerised:
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.10-slim
+    steps:
+      - run: pwd
+      - run: ls
+      - run: python3 --version
