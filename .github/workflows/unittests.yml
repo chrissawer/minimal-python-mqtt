@@ -9,4 +9,5 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.14'
-      - run: python3 --version
+      - run: python3 mqtt_tests.py
+      - run: python3 mqtt_message_tests.py
